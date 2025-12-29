@@ -3,8 +3,10 @@ import { Ollama } from "ollama";
 
 // Using window.location.origin to ensure the SDK doesn't try to append :11434 to a relative path
 const ollama = new Ollama({
+    // Use relative path for both dev (Vite proxy) and prod (Express proxy)
     host: (typeof window !== 'undefined' ? window.location.origin : '') + "/ollama-proxy",
     headers: {
+        // Fallback for local dev; in production the Express server will inject this
         Authorization: "Bearer " + (process.env.OLLAMA_API_KEY || ''),
     },
 });
