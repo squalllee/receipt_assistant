@@ -1,0 +1,7 @@
+{
+  "name": "桓妍記帳助手 (Receipt Splitter)",
+  "description": "An AI-powered receipt analyzer that splits expenses between '桓' and '妍' with custom splitting logic.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}
