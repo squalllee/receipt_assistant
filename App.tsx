@@ -57,7 +57,6 @@ const App: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const albumInputRef = useRef<HTMLInputElement>(null);
 
   // Persistence effects
   useEffect(() => {
@@ -393,41 +392,21 @@ const App: React.FC = () => {
         {activeTab === 'register' && (
           <section className="animate-in slide-in-from-top-4 duration-300">
             {!previewImage ? (
-              <div className="grid grid-cols-2 gap-4">
-                <div
-                  onClick={() => fileInputRef.current?.click()}
-                  className="border-2 border-dashed border-slate-200 rounded-3xl p-6 flex flex-col items-center justify-center bg-white cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/10 transition-all group shadow-sm"
-                >
-                  <div className="bg-slate-100 p-3 rounded-full mb-2 group-hover:scale-110 group-hover:bg-indigo-100 transition-all">
-                    <Camera className="text-slate-400 group-hover:text-indigo-600 w-5 h-5" />
-                  </div>
-                  <p className="font-bold text-slate-700 text-xs">直接拍照</p>
-                  <input
-                    type="file"
-                    ref={fileInputRef}
-                    className="hidden"
-                    accept="image/*"
-                    capture="environment"
-                    onChange={handleFileUpload}
-                  />
+              <div
+                onClick={() => fileInputRef.current?.click()}
+                className="border-2 border-dashed border-slate-200 rounded-3xl p-8 flex flex-col items-center justify-center bg-white cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/10 transition-all group shadow-sm"
+              >
+                <div className="bg-slate-100 p-4 rounded-full mb-3 group-hover:scale-110 group-hover:bg-indigo-100 transition-all">
+                  <Receipt className="text-slate-400 group-hover:text-indigo-600 w-6 h-6" />
                 </div>
-
-                <div
-                  onClick={() => albumInputRef.current?.click()}
-                  className="border-2 border-dashed border-slate-200 rounded-3xl p-6 flex flex-col items-center justify-center bg-white cursor-pointer hover:border-indigo-400 hover:bg-indigo-50/10 transition-all group shadow-sm"
-                >
-                  <div className="bg-slate-100 p-3 rounded-full mb-2 group-hover:scale-110 group-hover:bg-indigo-100 transition-all">
-                    <Upload className="text-slate-400 group-hover:text-indigo-600 w-5 h-5" />
-                  </div>
-                  <p className="font-bold text-slate-700 text-xs">相簿選取</p>
-                  <input
-                    type="file"
-                    ref={albumInputRef}
-                    className="hidden"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    onChange={handleFileUpload}
-                  />
-                </div>
+                <p className="font-bold text-slate-700 text-sm">請上傳收據或拍攝</p>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  className="hidden"
+                  accept="image/*"
+                  onChange={handleFileUpload}
+                />
               </div>
             ) : (
               <div className="relative rounded-3xl overflow-hidden shadow-xl aspect-[21/9] bg-slate-900 border-4 border-white">
