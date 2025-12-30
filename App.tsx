@@ -86,12 +86,12 @@ const App: React.FC = () => {
     return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   }, []);
 
-  const selectedHistoryRecord = useMemo(() =>
-    history.find(h => h.date === selectedDate),
+  const selectedHistoryRecords = useMemo(() =>
+    history.filter(h => h.date.startsWith(selectedDate.substring(0, 7))),
     [history, selectedDate]);
 
   const displayItems = activeTab === 'inquiry'
-    ? (selectedHistoryRecord?.items || [])
+    ? [] // Not used directly items list anymore in inquiry
     : items;
 
   const totals = useMemo((): CalculationResult => {
@@ -227,7 +227,7 @@ const App: React.FC = () => {
     }
   };
 
-  const isHistoryMode = !!selectedHistoryRecord;
+  const isHistoryMode = selectedHistoryRecords.length > 0;
 
   return (
     <div className="min-h-screen bg-slate-50 pb-40">
@@ -296,20 +296,11 @@ const App: React.FC = () => {
                     紀錄查詢
                   </h1>
                   <p className="text-emerald-400/80 text-[10px] font-bold uppercase tracking-wider mt-0.5">
-                    {isHistoryMode ? '查無紀錄' : '查看歷史明細'}
+                    {selectedHistoryRecords.length > 0 ? `共 ${selectedHistoryRecords.length} 筆紀錄` : '尚未有紀錄'}
                   </p>
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                {isHistoryMode && selectedHistoryRecord && (
-                  <button
-                    onClick={() => deleteHistoryRecord(selectedHistoryRecord.id)}
-                    className="p-2 text-rose-400 hover:text-rose-600 hover:bg-white/10 rounded-full transition-all"
-                    title="刪除此紀錄"
-                  >
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                )}
                 <div className="bg-slate-800 p-2 rounded-xl border border-slate-700">
                   <CalendarDays className="w-5 h-5 text-emerald-400" />
                 </div>
@@ -320,7 +311,7 @@ const App: React.FC = () => {
               <button
                 onClick={() => {
                   const d = new Date(selectedDate);
-                  d.setDate(d.getDate() - 1);
+                  d.setMonth(d.getMonth() - 1);
                   setSelectedDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
                 }}
                 className="p-2.5 hover:bg-white/10 rounded-xl transition-all active:scale-90"
@@ -330,9 +321,12 @@ const App: React.FC = () => {
 
               <div className="flex-1 text-center relative px-2">
                 <input
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
+                  type="month"
+                  value={selectedDate.substring(0, 7)}
+                  onChange={(e) => {
+                    const [year, month] = e.target.value.split('-');
+                    setSelectedDate(`${year}-${month}-01`);
+                  }}
                   className="bg-transparent text-white font-black text-lg w-full text-center outline-none cursor-pointer appearance-none selection:bg-emerald-500/30"
                 />
               </div>
@@ -340,7 +334,7 @@ const App: React.FC = () => {
               <button
                 onClick={() => {
                   const d = new Date(selectedDate);
-                  d.setDate(d.getDate() + 1);
+                  d.setMonth(d.getMonth() + 1);
                   setSelectedDate(`${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`);
                 }}
                 className="p-2.5 hover:bg-white/10 rounded-xl transition-all active:scale-90"
@@ -465,68 +459,128 @@ const App: React.FC = () => {
             )}
           </div>
 
-          <div className="space-y-3">
-            {displayItems.length === 0 && !isAnalyzing && (
-              <div className="text-center py-12 text-slate-300 bg-white rounded-3xl border border-slate-100 border-dashed">
-                <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 opacity-50">
-                  <Receipt className="w-8 h-8 text-slate-400" />
-                </div>
-                <p className="text-sm font-medium">
-                  {activeTab === 'inquiry' ? '該日期尚無紀錄' : '請上傳收據或手動新增'}
-                </p>
-              </div>
-            )}
-
-            {displayItems.map((item) => (
-              <div key={item.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md group">
-                <div className="flex justify-between gap-3 mb-4">
-                  <input
-                    readOnly={activeTab === 'inquiry'}
-                    className={`flex-1 font-bold text-slate-800 bg-transparent border-none focus:ring-0 p-0 text-base placeholder:text-slate-300 ${activeTab === 'inquiry' ? 'cursor-default' : ''}`}
-                    value={item.name}
-                    placeholder="項目名稱..."
-                    onChange={(e) => updateItem(item.id, { name: e.target.value })}
-                  />
-                  <div className="flex items-center gap-1 bg-slate-50 px-3 py-1 rounded-lg">
-                    <span className="text-slate-400 font-bold text-xs">$</span>
-                    <input
-                      readOnly={activeTab === 'inquiry'}
-                      type="number"
-                      className={`w-20 text-right font-black text-indigo-600 bg-transparent border-none focus:ring-0 p-0 text-lg placeholder:text-slate-300 ${activeTab === 'inquiry' ? 'cursor-default' : ''}`}
-                      value={item.amount || ''}
-                      placeholder="0"
-                      onChange={(e) => updateItem(item.id, { amount: Number(e.target.value) })}
-                    />
+          <div className="space-y-6">
+            {activeTab === 'inquiry' ? (
+              // Inquiry Mode: Show records for the whole month
+              selectedHistoryRecords.length === 0 ? (
+                <div className="text-center py-12 text-slate-300 bg-white rounded-3xl border border-slate-100 border-dashed">
+                  <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 opacity-50">
+                    <Receipt className="w-8 h-8 text-slate-400" />
                   </div>
+                  <p className="text-sm font-medium">該月份尚無紀錄</p>
                 </div>
-
-                <div className="flex items-center justify-between mt-2 pt-3 border-t border-slate-50">
-                  <div className={`flex p-1 rounded-xl w-fit ${activeTab === 'inquiry' ? 'bg-slate-50/30' : 'bg-slate-100/50'}`}>
-                    {(['桓', '妍', '平分'] as Payer[]).map((p) => (
-                      <button
-                        key={p}
-                        disabled={activeTab === 'inquiry'}
-                        onClick={() => updateItem(item.id, { payer: p })}
-                        className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${item.payer === p
-                          ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200'
-                          : 'text-slate-400 hover:text-slate-600'
-                          } ${activeTab === 'inquiry' && item.payer !== p ? 'opacity-30' : ''}`}
-                      >
-                        {p}
-                      </button>
+              ) : (
+                selectedHistoryRecords.map((record) => (
+                  <div key={record.id} className="space-y-3">
+                    <div className="flex justify-between items-center px-1">
+                      <div className="flex items-center gap-2">
+                        <CalendarDays className="w-4 h-4 text-emerald-500" />
+                        <span className="text-sm font-bold text-slate-500">{record.date}</span>
+                      </div>
+                    </div>
+                    {record.items.map((item) => (
+                      <div key={item.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm">
+                        <div className="flex justify-between gap-3 mb-4">
+                          <span className="flex-1 font-bold text-slate-800">{item.name}</span>
+                          <div className="flex items-center gap-1 bg-slate-50 px-3 py-1 rounded-lg">
+                            <span className="text-slate-400 font-bold text-xs">$</span>
+                            <span className="w-20 text-right font-black text-indigo-600 text-lg">{item.amount.toLocaleString()}</span>
+                          </div>
+                        </div>
+                        <div className="flex items-center justify-between mt-2 pt-3 border-t border-slate-50">
+                          <div className="flex flex-col gap-2 items-end">
+                            <div className="flex p-1 rounded-xl w-fit bg-slate-50/30">
+                              {(['桓', '妍', '平分'] as Payer[]).map((p) => (
+                                <button
+                                  key={p}
+                                  disabled
+                                  className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${item.payer === p
+                                    ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200'
+                                    : 'text-slate-400 opacity-30'
+                                    }`}
+                                >
+                                  {p}
+                                </button>
+                              ))}
+                            </div>
+                            {item.payer === '平分' && (
+                              <p className="text-[10px] font-bold text-slate-400">
+                                桓: ${Math.ceil(item.amount / 2).toLocaleString()} / 妍: ${Math.floor(item.amount / 2).toLocaleString()}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     ))}
                   </div>
-                  {activeTab === 'register' && (
-                    <button
-                      onClick={() => removeItem(item.id)}
-                      className="p-2 text-slate-200 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-all"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  )}
-                </div>
-              </div>
-            ))}
+                ))
+              )
+            ) : (
+              // Register Mode: Show items for the current draft
+              <>
+                {items.length === 0 && !isAnalyzing && (
+                  <div className="text-center py-12 text-slate-300 bg-white rounded-3xl border border-slate-100 border-dashed">
+                    <div className="bg-slate-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4 opacity-50">
+                      <Receipt className="w-8 h-8 text-slate-400" />
+                    </div>
+                    <p className="text-sm font-medium">請上傳收據或拍攝</p>
+                  </div>
+                )}
+
+                {items.map((item) => (
+                  <div key={item.id} className="bg-white p-4 rounded-2xl border border-slate-100 shadow-sm transition-all hover:shadow-md group">
+                    <div className="flex justify-between gap-3 mb-4">
+                      <input
+                        className="flex-1 font-bold text-slate-800 bg-transparent border-none focus:ring-0 p-0 text-base placeholder:text-slate-300"
+                        value={item.name}
+                        placeholder="項目名稱..."
+                        onChange={(e) => updateItem(item.id, { name: e.target.value })}
+                      />
+                      <div className="flex items-center gap-1 bg-slate-50 px-3 py-1 rounded-lg">
+                        <span className="text-slate-400 font-bold text-xs">$</span>
+                        <input
+                          type="number"
+                          className="w-20 text-right font-black text-indigo-600 bg-transparent border-none focus:ring-0 p-0 text-lg placeholder:text-slate-300"
+                          value={item.amount || ''}
+                          placeholder="0"
+                          onChange={(e) => updateItem(item.id, { amount: Number(e.target.value) })}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center justify-between mt-2 pt-3 border-t border-slate-50">
+                      <div className="flex flex-col gap-2">
+                        <div className="flex p-1 rounded-xl w-fit bg-slate-100/50">
+                          {(['桓', '妍', '平分'] as Payer[]).map((p) => (
+                            <button
+                              key={p}
+                              onClick={() => updateItem(item.id, { payer: p })}
+                              className={`px-4 py-1.5 rounded-lg text-xs font-bold transition-all ${item.payer === p
+                                ? 'bg-white text-indigo-600 shadow-sm ring-1 ring-slate-200'
+                                : 'text-slate-400 hover:text-slate-600'
+                                }`}
+                            >
+                              {p}
+                            </button>
+                          ))}
+                        </div>
+                        {item.payer === '平分' && (
+                          <p className="text-[10px] font-bold text-indigo-400 ml-1">
+                            桓: ${Math.ceil(item.amount / 2).toLocaleString()} / 妍: ${Math.floor(item.amount / 2).toLocaleString()}
+                          </p>
+                        )}
+                      </div>
+                      <button
+                        onClick={() => removeItem(item.id)}
+                        className="p-2 text-slate-200 hover:text-rose-500 hover:bg-rose-50 rounded-full transition-all"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </>
+            )}
           </div>
 
           {activeTab === 'register' && items.length > 0 && (
