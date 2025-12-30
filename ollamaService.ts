@@ -8,9 +8,8 @@ The 'amount' should be a number.
 Example response format: {"items": [{"name": "Burger", "amount": 150}, {"name": "Coke", "amount": 35}]}`;
 
 export async function analyzeReceipt(base64Image: string): Promise<{ name: string; amount: number }[]> {
-    // Debug check: Verify if API Key is loaded in the frontend
-    console.log("Ollama Analysis Started (Direct Fetch):");
-    console.log("- API Key Status:", process.env.OLLAMA_API_KEY ? `Defined (Length: ${process.env.OLLAMA_API_KEY.length})` : "Undefined");
+    // Debug check: Verify if analysis is starting
+    console.log("Ollama Analysis Started (Direct Fetch)...");
 
     try {
         const base64Data = base64Image.substring(base64Image.indexOf(',') + 1);
@@ -20,7 +19,6 @@ export async function analyzeReceipt(base64Image: string): Promise<{ name: strin
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
-                'Authorization': `Bearer ${process.env.OLLAMA_API_KEY || ''}`
             },
             body: JSON.stringify({
                 model: "gemini-3-flash-preview:latest",

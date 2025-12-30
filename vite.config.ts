@@ -16,12 +16,11 @@ export default defineConfig(({ mode }) => {
           rewrite: (path) => path.replace(/^\/ollama-proxy/, ''),
           configure: (proxy, _options) => {
             proxy.on('proxyReq', (proxyReq, req, _res) => {
-              const authHeader = req.headers.authorization;
-              console.log(`[Proxy] ${req.method} ${proxyReq.path}`);
-              console.log(`[Proxy] Auth Header Present: ${!!authHeader}`);
-              if (authHeader) {
-                console.log(`[Proxy] Auth Header Prefix: ${authHeader.substring(0, 15)}...`);
+              // Inject the API key during local development
+              if (env.OLLAMA_API_KEY) {
+                proxyReq.setHeader('Authorization', `Bearer ${env.OLLAMA_API_KEY}`);
               }
+              console.log(`[Dev Proxy] ${req.method} ${proxyReq.path}`);
             });
             proxy.on('error', (err, _req, _res) => {
               console.error('[Proxy] Error:', err);
@@ -34,7 +33,6 @@ export default defineConfig(({ mode }) => {
     define: {
       'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
       'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY),
-      'process.env.OLLAMA_API_KEY': JSON.stringify(env.OLLAMA_API_KEY),
       'process.env.SUPABASE_URL': JSON.stringify(env.SUPABASE_URL || 'https://vngtmamxhvcldecesfwh.supabase.co'),
       'process.env.SUPABASE_ANON_KEY': JSON.stringify(env.SUPABASE_ANON_KEY)
     },
