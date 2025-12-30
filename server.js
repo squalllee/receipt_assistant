@@ -19,18 +19,22 @@ app.use('/ollama-proxy', createProxyMiddleware({
     pathRewrite: {
         '^/ollama-proxy': '',
     },
-    onProxyReq: (proxyReq, req, res) => {
-        // Inject the API key from server-side environment variables
-        const apiKey = process.env.OLLAMA_API_KEY;
-        console.log(`[Proxy] Routing ${req.method} ${req.url} -> ${proxyReq.path}`);
-        if (apiKey) {
-            proxyReq.setHeader('Authorization', `Bearer ${apiKey}`);
-            console.log('[Proxy] Authorization header injected');
-        } else {
-            console.warn('[Proxy] OLLAMA_API_KEY is not defined in environment variables');
+    on: {
+        proxyReq: (proxyReq, req, res) => {
+            // Inject the API key from server-side environment variables
+            const apiKey = process.env.OLLAMA_API_KEY;
+            console.log(`[Proxy] Routing ${req.method} ${req.url} -> ${proxyReq.path}`);
+            if (apiKey) {
+                proxyReq.setHeader('Authorization', `Bearer ${apiKey}`);
+                console.log('[Proxy] Authorization header injected');
+            } else {
+                console.warn('[Proxy] OLLAMA_API_KEY is not defined in environment variables');
+            }
+        },
+        error: (err, req, res) => {
+            console.error('[Proxy] Error:', err);
         }
-    },
-    // Use followRedirects: true if target might redirect
+    }
 }));
 
 // Serve static files
