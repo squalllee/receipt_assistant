@@ -163,12 +163,12 @@ const App: React.FC = () => {
   // Removed addItem as requested
 
   const updateItem = (id: string, updates: Partial<ReceiptItem>) => {
-    if (isHistoryMode) return;
+    if (activeTab === 'inquiry') return;
     setItems(items.map(item => item.id === id ? { ...item, ...updates } : item));
   };
 
   const removeItem = (id: string) => {
-    if (isHistoryMode) return;
+    if (activeTab === 'inquiry') return;
     setItems(items.filter(item => item.id !== id));
   };
 
@@ -228,7 +228,7 @@ const App: React.FC = () => {
     }
   };
 
-  const isHistoryMode = selectedHistoryRecords.length > 0;
+  const isHistoryMode = activeTab === 'inquiry' && selectedHistoryRecords.length > 0;
 
   return (
     <div className="min-h-screen bg-slate-50 pb-40">
