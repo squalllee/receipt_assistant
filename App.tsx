@@ -424,7 +424,7 @@ const App: React.FC = () => {
                     type="file"
                     ref={albumInputRef}
                     className="hidden"
-                    accept="image/*"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
                     onChange={handleFileUpload}
                   />
                 </div>
